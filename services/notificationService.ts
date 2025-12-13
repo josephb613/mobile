@@ -43,9 +43,9 @@ export const requestPermissions = async (): Promise<boolean> => {
       await Notifications.setNotificationChannelAsync('reminders', {
         name: 'Rappels',
         importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 250, 250, 250],
-        sound: 'default',
+        vibrationPattern: [0, 1000, 500, 1000, 500, 1000, 500, 1000],
         enableVibrate: true,
+        sound: 'notification.wav',
       });
     }
     
@@ -92,9 +92,9 @@ export const scheduleNotification = async (reminder: Reminder): Promise<string> 
       content: {
         title: reminder.title,
         body: reminder.description || 'Rappel',
-        sound: true,
+        sound: 'notification.wav',
         priority: Notifications.AndroidNotificationPriority.MAX,
-        vibrate: [0, 250, 250, 250],
+        vibrate: [0, 1000, 500, 1000, 500, 1000, 500, 1000],
         data: { reminderId: reminder.id },
       },
       trigger: notificationTrigger,

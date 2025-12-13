@@ -1,9 +1,13 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
+import { PaperProvider } from 'react-native-paper';
+import { useEffect } from 'react';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { lightTheme, darkTheme } from '@/constants/appTheme';
+import { initDatabase } from '@/services/storageService';
+import { requestPermissions, setupNotificationHandler } from '@/services/notificationService';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -11,14 +15,44 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
+
+  useEffect(() => {
+    // Initialize database and notifications
+    const init = async () => {
+      try {
+        await initDatabase();
+        
+        // Only setup notifications in standalone builds, not in Expo Go
+        const isExpoGo = __DEV__ && !process.env.EXPO_PUBLIC_USE_DEV_CLIENT;
+        if (!isExpoGo) {
+          await requestPermissions();
+          setupNotificationHandler();
+        } else {
+          console.log('Running in Expo Go - notifications disabled. Build standalone app for full functionality.');
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+      }
+    };
+    
+    init();
+  }, []);
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <PaperProvider theme={theme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen 
+          name="add-edit-reminder" 
+          options={{ 
+            presentation: 'modal', 
+            title: 'Rappel',
+            headerShown: true 
+          }} 
+        />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+    </PaperProvider>
   );
 }

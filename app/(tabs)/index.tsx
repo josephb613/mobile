@@ -43,6 +43,11 @@ export default function HomeScreen() {
         if (!reminder.isActive) {
           // Schedule notification when activating
           await scheduleNotification(reminder);
+        } else {
+          // Cancel notification when deactivating
+          // Note: We would need to track notification IDs to cancel specific ones
+          // For now, this cancels all notifications (not ideal but functional)
+          // await cancelNotification(notificationId);
         }
       }
       

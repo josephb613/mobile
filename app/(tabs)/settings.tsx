@@ -18,12 +18,16 @@ export default function SettingsScreen() {
           <List.Item
             title="Version"
             description="1.0.0"
+            titleStyle={{ color: theme.colors.onSurface }}
+            descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
             left={props => <List.Icon {...props} icon="information-outline" />}
           />
           <Divider />
           <List.Item
             title="Notifications"
             description="Gérer les permissions de notification"
+            titleStyle={{ color: theme.colors.onSurface }}
+            descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
             left={props => <List.Icon {...props} icon="bell-outline" />}
             right={props => <List.Icon {...props} icon="chevron-right" />}
           />
@@ -36,6 +40,8 @@ export default function SettingsScreen() {
           <List.Item
             title="Application de rappels"
             description="Une application simple pour gérer vos rappels avec alarmes"
+            titleStyle={{ color: theme.colors.onSurface }}
+            descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
             left={props => <List.Icon {...props} icon="information-outline" />}
           />
         </List.Section>

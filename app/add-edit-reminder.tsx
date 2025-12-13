@@ -114,6 +114,7 @@ export default function AddEditReminderScreen() {
           onChangeText={setTitle}
           mode="outlined"
           style={styles.input}
+          theme={{ colors: { primary: theme.colors.primary, background: theme.colors.surface } }}
         />
 
         <TextInput
@@ -124,6 +125,7 @@ export default function AddEditReminderScreen() {
           multiline
           numberOfLines={3}
           style={styles.input}
+          theme={{ colors: { primary: theme.colors.primary, background: theme.colors.surface } }}
         />
 
         <View style={styles.dateTimeContainer}>

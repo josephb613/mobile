@@ -2,18 +2,29 @@ import * as Notifications from 'expo-notifications';
 import { Reminder } from '@/types/reminder';
 import { Platform } from 'react-native';
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// Check if we're running in Expo Go
+const isExpoGo = __DEV__ && !process.env.EXPO_PUBLIC_USE_DEV_CLIENT;
+
+// Configure notification handler only if not in Expo Go
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 export const requestPermissions = async (): Promise<boolean> => {
+  // Skip permissions request in Expo Go
+  if (isExpoGo) {
+    console.log('Skipping permissions request in Expo Go');
+    return false;
+  }
+
   try {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -46,6 +57,12 @@ export const requestPermissions = async (): Promise<boolean> => {
 };
 
 export const scheduleNotification = async (reminder: Reminder): Promise<string> => {
+  // Skip scheduling in Expo Go
+  if (isExpoGo) {
+    console.log('Skipping notification scheduling in Expo Go');
+    return '';
+  }
+
   try {
     const trigger = new Date(reminder.dateTime);
     
@@ -91,6 +108,12 @@ export const scheduleNotification = async (reminder: Reminder): Promise<string> 
 };
 
 export const cancelNotification = async (notificationId: string): Promise<void> => {
+  // Skip canceling in Expo Go
+  if (isExpoGo) {
+    console.log('Skipping notification cancel in Expo Go');
+    return;
+  }
+
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch (error) {
@@ -99,6 +122,12 @@ export const cancelNotification = async (notificationId: string): Promise<void> 
 };
 
 export const cancelAllNotifications = async (): Promise<void> => {
+  // Skip canceling all in Expo Go
+  if (isExpoGo) {
+    console.log('Skipping cancel all notifications in Expo Go');
+    return;
+  }
+
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (error) {
@@ -107,6 +136,12 @@ export const cancelAllNotifications = async (): Promise<void> => {
 };
 
 export const setupNotificationHandler = () => {
+  // Skip setup in Expo Go
+  if (isExpoGo) {
+    console.log('Skipping notification handler setup in Expo Go');
+    return;
+  }
+
   // Handle notification received while app is in foreground
   Notifications.addNotificationReceivedListener(notification => {
     console.log('Notification received:', notification);

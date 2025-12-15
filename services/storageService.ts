@@ -15,6 +15,7 @@ export const initDatabase = async () => {
         repeat TEXT NOT NULL,
         priority TEXT NOT NULL,
         isActive INTEGER NOT NULL DEFAULT 1,
+        notificationId TEXT,
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL
       );
@@ -58,9 +59,9 @@ export const createReminder = async (reminder: Omit<Reminder, 'id' | 'createdAt'
   
   try {
     await db.runAsync(
-      `INSERT INTO reminders (id, title, description, dateTime, repeat, priority, isActive, createdAt, updatedAt) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, reminder.title, reminder.description || '', reminder.dateTime, reminder.repeat, reminder.priority, reminder.isActive ? 1 : 0, now, now]
+      `INSERT INTO reminders (id, title, description, dateTime, repeat, priority, isActive, notificationId, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, reminder.title, reminder.description || '', reminder.dateTime, reminder.repeat, reminder.priority, reminder.isActive ? 1 : 0, reminder.notificationId, now, now]
     );
     
     return {
@@ -105,6 +106,10 @@ export const updateReminder = async (id: string, updates: Partial<Reminder>): Pr
     if (updates.isActive !== undefined) {
       fields.push('isActive = ?');
       values.push(updates.isActive ? 1 : 0);
+    }
+    if (updates.notificationId !== undefined) {
+      fields.push('notificationId = ?');
+      values.push(updates.notificationId);
     }
     
     fields.push('updatedAt = ?');

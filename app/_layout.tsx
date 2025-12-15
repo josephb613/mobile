@@ -4,9 +4,8 @@ import 'react-native-reanimated';
 import { PaperProvider } from 'react-native-paper';
 import { useEffect } from 'react';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { lightTheme, darkTheme } from '@/constants/appTheme';
 import { initDatabase } from '@/services/storageService';
+import { theme } from '@/constants/theme';
 import { requestPermissions, setupNotificationHandler } from '@/services/notificationService';
 
 export const unstable_settings = {
@@ -14,9 +13,6 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? darkTheme : lightTheme;
-
   useEffect(() => {
     // Initialize database and notifications
     const init = async () => {
@@ -51,8 +47,15 @@ export default function RootLayout() {
             headerShown: true 
           }} 
         />
+        <Stack.Screen
+          name="alarm"
+          options={{
+            presentation: 'modal',
+            headerShown: false
+          }}
+        />
       </Stack>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style="dark" />
     </PaperProvider>
   );
 }

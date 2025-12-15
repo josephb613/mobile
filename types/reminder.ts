@@ -9,6 +9,7 @@ export interface Reminder {
   repeat: RepeatType;
   priority: PriorityLevel;
   isActive: boolean;
+  notificationId?: string;
   createdAt: string;
   updatedAt: string;
 }

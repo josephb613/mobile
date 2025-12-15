@@ -1,20 +1,21 @@
 import React, { useState, useCallback } from 'react';
 import { StyleSheet, FlatList, View } from 'react-native';
-import { FAB, Appbar, Text, useTheme } from 'react-native-paper';
+import { FAB, Text } from 'react-native-paper';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import ReminderCard from '@/components/ReminderCard';
+import HomeScreenHeader from '@/components/HomeScreenHeader';
+import WaterTracker from '@/components/WaterTracker';
 import { Reminder } from '@/types/reminder';
-import { getAllReminders, deleteReminder, toggleReminderActive } from '@/services/storageService';
+import { getAllReminders, deleteReminder, toggleReminderActive, updateReminder } from '@/services/storageService';
 import { scheduleNotification, cancelNotification } from '@/services/notificationService';
-import { AppTheme } from '@/constants/appTheme';
+import { theme } from '@/constants/theme';
 
 export default function HomeScreen() {
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const theme = useTheme<AppTheme>();
 
   const loadReminders = async () => {
     try {
@@ -42,12 +43,13 @@ export default function HomeScreen() {
       if (!isExpoGo) {
         if (!reminder.isActive) {
           // Schedule notification when activating
-          await scheduleNotification(reminder);
+          const notificationId = await scheduleNotification(reminder);
+          await updateReminder(reminder.id, { notificationId });
         } else {
           // Cancel notification when deactivating
-          // Note: We would need to track notification IDs to cancel specific ones
-          // For now, this cancels all notifications (not ideal but functional)
-          // await cancelNotification(notificationId);
+          if (reminder.notificationId) {
+            await cancelNotification(reminder.notificationId);
+          }
         }
       }
       
@@ -78,17 +80,16 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.Content title="Mes Rappels" />
-      </Appbar.Header>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <HomeScreenHeader />
+      <WaterTracker />
 
       {reminders.length === 0 && !loading ? (
         <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons 
-            name="bell-off-outline" 
-            size={64} 
-            color={theme.colors.onSurfaceDisabled} 
+          <MaterialCommunityIcons
+            name="bell-off-outline"
+            size={64}
+            color={theme.colors.placeholder}
           />
           <Text variant="titleMedium" style={styles.emptyTitle}>
             Aucun rappel
@@ -98,19 +99,22 @@ export default function HomeScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
-          data={reminders}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <ReminderCard
-              reminder={item}
-              onPress={() => handleEdit(item)}
-              onToggle={() => handleToggle(item)}
-              onDelete={() => handleDelete(item.id)}
-            />
-          )}
-          contentContainerStyle={styles.list}
-        />
+        <>
+          <Text style={styles.yourAlarmsTitle}>Vos Alarmes</Text>
+          <FlatList
+            data={reminders}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ReminderCard
+                reminder={item}
+                onPress={() => handleEdit(item)}
+                onToggle={() => handleToggle(item)}
+                onDelete={() => handleDelete(item.id)}
+              />
+            )}
+            contentContainerStyle={styles.list}
+          />
+        </>
       )}
 
       <FAB
@@ -149,5 +153,11 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
+  },
+  yourAlarmsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
 });

@@ -1,10 +1,9 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Card, Text, Switch, IconButton, useTheme } from 'react-native-paper';
-import { Reminder } from '@/types/reminder';
-import { formatReminderDate, getRepeatLabel, getPriorityLabel } from '@/utils/dateUtils';
-import { AppTheme } from '@/constants/appTheme';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Switch, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { theme } from '@/constants/theme';
+import { Reminder } from '@/types/reminder';
 
 interface ReminderCardProps {
   reminder: Reminder;
@@ -13,145 +12,62 @@ interface ReminderCardProps {
   onDelete: () => void;
 }
 
-export default function ReminderCard({ reminder, onPress, onToggle, onDelete }: ReminderCardProps) {
-  const theme = useTheme<AppTheme>();
-  
-  const getPriorityColor = () => {
-    switch (reminder.priority) {
-      case 'high':
-        return theme.custom.priorityHigh;
-      case 'medium':
-        return theme.custom.priorityMedium;
-      case 'low':
-        return theme.custom.priorityLow;
-      default:
-        return theme.colors.primary;
-    }
-  };
-  
+const ReminderCard = ({ reminder, onPress, onToggle, onDelete }: ReminderCardProps) => {
+  const { title, dateTime, isActive } = reminder;
+
+  // Get the time from the dateTime string
+  const time = new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
   return (
-    <Card 
-      style={[styles.card, { borderLeftColor: getPriorityColor(), borderLeftWidth: 4 }]}
-      onPress={onPress}
-    >
-      <Card.Content>
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <MaterialCommunityIcons 
-              name="bell-outline" 
-              size={24} 
-              color={reminder.isActive ? getPriorityColor() : theme.colors.outline}
-              style={styles.icon}
-            />
-            <View style={styles.textContainer}>
-              <Text 
-                variant="titleMedium" 
-                style={[styles.title, !reminder.isActive && styles.inactiveText]}
-              >
-                {reminder.title}
-              </Text>
-              {reminder.description && (
-                <Text 
-                  variant="bodySmall" 
-                  style={[styles.description, !reminder.isActive && styles.inactiveText]}
-                  numberOfLines={2}
-                >
-                  {reminder.description}
-                </Text>
-              )}
-            </View>
-          </View>
-          <Switch 
-            value={reminder.isActive} 
-            onValueChange={onToggle}
-            color={getPriorityColor()}
-          />
-        </View>
-        
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="clock-outline" size={16} color={theme.colors.onSurfaceVariant} />
-            <Text variant="bodySmall" style={styles.detailText}>
-              {formatReminderDate(new Date(reminder.dateTime))}
-            </Text>
-          </View>
-          
-          {reminder.repeat !== 'none' && (
-            <View style={styles.detailRow}>
-              <MaterialCommunityIcons name="repeat" size={16} color={theme.colors.onSurfaceVariant} />
-              <Text variant="bodySmall" style={styles.detailText}>
-                {getRepeatLabel(reminder.repeat)}
-              </Text>
-            </View>
-          )}
-          
-          <View style={styles.detailRow}>
-            <MaterialCommunityIcons name="flag-outline" size={16} color={getPriorityColor()} />
-            <Text variant="bodySmall" style={[styles.detailText, { color: getPriorityColor() }]}>
-              {getPriorityLabel(reminder.priority)}
-            </Text>
-          </View>
-        </View>
-      </Card.Content>
-      
-      <Card.Actions>
-        <IconButton
-          icon="delete-outline"
-          size={20}
-          onPress={onDelete}
-          iconColor={theme.colors.error}
-        />
-      </Card.Actions>
-    </Card>
+    <TouchableOpacity onPress={onPress} style={styles.card}>
+      <View style={styles.iconContainer}>
+        <MaterialCommunityIcons name="bell" size={24} color={theme.colors.primary} />
+      </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.time}>{time}</Text>
+      </View>
+      <Switch
+        value={isActive}
+        onValueChange={onToggle}
+        color={theme.colors.primary}
+      />
+      <IconButton
+        icon="delete"
+        size={24}
+        onPress={onDelete}
+        iconColor={theme.colors.notification}
+      />
+    </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
-    marginVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.roundness,
+    padding: theme.spacing.m,
+    marginHorizontal: theme.spacing.m,
+    marginBottom: theme.spacing.s,
     elevation: 2,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  titleContainer: {
-    flexDirection: 'row',
-    flex: 1,
-    alignItems: 'flex-start',
-  },
-  icon: {
-    marginRight: 12,
-    marginTop: 2,
+  iconContainer: {
+    marginRight: theme.spacing.m,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.text,
   },
-  description: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  inactiveText: {
-    opacity: 0.5,
-    textDecorationLine: 'line-through',
-  },
-  details: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  detailText: {
-    opacity: 0.8,
+  time: {
+    fontSize: 14,
+    color: theme.colors.placeholder,
   },
 });
+
+export default ReminderCard;

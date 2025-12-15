@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ScrollView, Platform } from 'react-native';
-import { TextInput, Button, SegmentedButtons, useTheme, Text } from 'react-native-paper';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, ScrollView, Platform, TouchableOpacity, Text } from 'react-native';
+import { TextInput } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import { Reminder, RepeatType, PriorityLevel } from '@/types/reminder';
+import { RepeatType, PriorityLevel } from '@/types/reminder';
 import { getReminderById, createReminder, updateReminder } from '@/services/storageService';
 import { scheduleNotification } from '@/services/notificationService';
-import { AppTheme } from '@/constants/appTheme';
+import { theme } from '@/constants/theme';
 
 export default function AddEditReminderScreen() {
   const { reminderId } = useLocalSearchParams<{ reminderId?: string }>();
   const router = useRouter();
-  const theme = useTheme<AppTheme>();
-  
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date());
@@ -28,11 +27,11 @@ export default function AddEditReminderScreen() {
     if (reminderId) {
       loadReminder();
     }
-  }, [reminderId]);
+  }, [reminderId, loadReminder]);
 
-  const loadReminder = async () => {
+  const loadReminder = useCallback(async () => {
     if (!reminderId) return;
-    
+
     try {
       const reminder = await getReminderById(reminderId);
       if (reminder) {
@@ -47,7 +46,7 @@ export default function AddEditReminderScreen() {
     } catch (error) {
       console.error('Error loading reminder:', error);
     }
-  };
+  }, [reminderId]);
 
   const handleSave = async () => {
     if (!title.trim()) {
@@ -74,8 +73,7 @@ export default function AddEditReminderScreen() {
         await updateReminder(reminderId, reminderData);
       } else {
         const newReminder = await createReminder(reminderData);
-        
-        // Only schedule notifications in standalone builds
+
         const isExpoGo = __DEV__ && !process.env.EXPO_PUBLIC_USE_DEV_CLIENT;
         if (!isExpoGo) {
           await scheduleNotification(newReminder);
@@ -106,127 +104,102 @@ export default function AddEditReminderScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.form}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <Text style={styles.headerTitle}>{reminderId ? 'Modifier le Rappel' : 'Ajouter un Rappel'}</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Titre</Text>
         <TextInput
-          label="Titre *"
+          placeholder="Entrez le titre"
           value={title}
           onChangeText={setTitle}
-          mode="outlined"
           style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary, background: theme.colors.surface } }}
         />
+      </View>
 
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Description</Text>
         <TextInput
-          label="Description"
+          placeholder="Entrez la description"
           value={description}
           onChangeText={setDescription}
-          mode="outlined"
           multiline
-          numberOfLines={3}
-          style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary, background: theme.colors.surface } }}
+          style={[styles.input, styles.textarea]}
         />
+      </View>
 
-        <View style={styles.dateTimeContainer}>
-          <View style={styles.dateTimeButton}>
-            <Text variant="labelLarge" style={styles.label}>Date</Text>
-            <Button 
-              mode="outlined" 
-              onPress={() => setShowDatePicker(true)}
-              icon="calendar"
+      <View style={styles.row}>
+        <View style={[styles.inputGroup, styles.flex]}>
+          <Text style={styles.label}>Date</Text>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+            <Text>{date.toLocaleDateString('fr-FR')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.inputGroup, styles.flex]}>
+          <Text style={styles.label}>Heure</Text>
+          <TouchableOpacity onPress={() => setShowTimePicker(true)} style={styles.dateButton}>
+            <Text>{time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {showDatePicker && (
+        <DateTimePicker value={date} mode="date" display="default" onChange={onDateChange} />
+      )}
+      {showTimePicker && (
+        <DateTimePicker value={time} mode="time" display="default" onChange={onTimeChange} />
+      )}
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Répéter</Text>
+        <View style={styles.segmentedControl}>
+          {['none', 'daily', 'weekly'].map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[styles.segment, repeat === item && styles.segmentSelected]}
+              onPress={() => setRepeat(item as RepeatType)}
             >
-              {date.toLocaleDateString('fr-FR')}
-            </Button>
-          </View>
+              <Text style={[styles.segmentText, repeat === item && styles.segmentTextSelected]}>
+                {item === 'none' ? 'Jamais' : item === 'daily' ? 'Tous les jours' : 'Toutes les semaines'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
-          <View style={styles.dateTimeButton}>
-            <Text variant="labelLarge" style={styles.label}>Heure</Text>
-            <Button 
-              mode="outlined" 
-              onPress={() => setShowTimePicker(true)}
-              icon="clock-outline"
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Priorité</Text>
+        <View style={styles.segmentedControl}>
+          {['low', 'medium', 'high'].map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.segment,
+                priority === item && styles.segmentSelected,
+              ]}
+              onPress={() => setPriority(item as PriorityLevel)}
             >
-              {time.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-            </Button>
-          </View>
+              <Text
+                style={[
+                  styles.segmentText,
+                  priority === item && styles.segmentTextSelected,
+                ]}
+              >
+                {item === 'low' ? 'Basse' : item === 'medium' ? 'Moyenne' : 'Haute'}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={onDateChange}
-            minimumDate={new Date()}
-          />
-        )}
-
-        {showTimePicker && (
-          <DateTimePicker
-            value={time}
-            mode="time"
-            display="default"
-            onChange={onTimeChange}
-          />
-        )}
-
-        <View style={styles.section}>
-          <Text variant="labelLarge" style={styles.label}>Répétition</Text>
-          <SegmentedButtons
-            value={repeat}
-            onValueChange={(value) => setRepeat(value as RepeatType)}
-            buttons={[
-              { value: 'none', label: 'Unique' },
-              { value: 'daily', label: 'Quotidienne' },
-              { value: 'weekly', label: 'Hebdomadaire' },
-            ]}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text variant="labelLarge" style={styles.label}>Priorité</Text>
-          <SegmentedButtons
-            value={priority}
-            onValueChange={(value) => setPriority(value as PriorityLevel)}
-            buttons={[
-              { 
-                value: 'low', 
-                label: 'Faible',
-                style: priority === 'low' ? { backgroundColor: theme.custom.priorityLow } : undefined
-              },
-              { 
-                value: 'medium', 
-                label: 'Moyenne',
-                style: priority === 'medium' ? { backgroundColor: theme.custom.priorityMedium } : undefined
-              },
-              { 
-                value: 'high', 
-                label: 'Élevée',
-                style: priority === 'high' ? { backgroundColor: theme.custom.priorityHigh } : undefined
-              },
-            ]}
-          />
-        </View>
-
-        <View style={styles.actions}>
-          <Button 
-            mode="outlined" 
-            onPress={() => router.back()}
-            style={styles.button}
-          >
-            Annuler
-          </Button>
-          <Button 
-            mode="contained" 
-            onPress={handleSave}
-            loading={loading}
-            disabled={loading}
-            style={styles.button}
-          >
-            Enregistrer
-          </Button>
-        </View>
+      <View style={styles.actions}>
+        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => router.back()}>
+          <Text style={styles.buttonText}>Annuler</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={handleSave} disabled={loading}>
+          <Text style={[styles.buttonText, styles.saveButtonText]}>{loading ? 'Enregistrement...' : 'Enregistrer'}</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -235,33 +208,95 @@ export default function AddEditReminderScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
-  form: {
-    padding: 16,
+  contentContainer: {
+    padding: theme.spacing.m,
   },
-  input: {
-    marginBottom: 16,
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: theme.spacing.l,
   },
-  dateTimeContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  dateTimeButton: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: 24,
+  inputGroup: {
+    marginBottom: theme.spacing.m,
   },
   label: {
-    marginBottom: 8,
+    fontSize: 16,
+    marginBottom: theme.spacing.s,
+    color: theme.colors.placeholder,
+  },
+  input: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.roundness,
+    padding: theme.spacing.m,
+    fontSize: 16,
+  },
+  textarea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  flex: {
+    flex: 1,
+    marginRight: theme.spacing.m,
+  },
+  dateButton: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.roundness,
+    padding: theme.spacing.m,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.roundness,
+  },
+  segment: {
+    flex: 1,
+    padding: theme.spacing.m,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  segmentSelected: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.roundness,
+  },
+  segmentText: {
+    fontSize: 16,
+  },
+  segmentTextSelected: {
+    color: 'white',
   },
   actions: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
+    justifyContent: 'space-between',
+    marginTop: theme.spacing.l,
   },
   button: {
     flex: 1,
+    padding: theme.spacing.m,
+    borderRadius: theme.roundness,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.surface,
+    marginRight: theme.spacing.s,
+  },
+  saveButton: {
+    backgroundColor: theme.colors.primary,
+    marginLeft: theme.spacing.s,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  saveButtonText: {
+    color: 'white',
   },
 });

@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { router } from 'expo-router';
 import { Reminder } from '@/types/reminder';
 import { Platform } from 'react-native';
 
@@ -95,7 +96,12 @@ export const scheduleNotification = async (reminder: Reminder): Promise<string> 
         sound: true,
         priority: Notifications.AndroidNotificationPriority.MAX,
         vibrate: [0, 250, 250, 250],
-        data: { reminderId: reminder.id },
+        data: {
+          reminderId: reminder.id,
+          title: reminder.title,
+          description: reminder.description,
+          dateTime: reminder.dateTime,
+        },
       },
       trigger: notificationTrigger,
     });
@@ -149,7 +155,10 @@ export const setupNotificationHandler = () => {
   
   // Handle notification tapped
   Notifications.addNotificationResponseReceivedListener(response => {
-    console.log('Notification response:', response);
-    // Navigate to reminder details if needed
+    const { reminderId, title, description, dateTime } = response.notification.request.content.data;
+    router.push({
+      pathname: '/alarm',
+      params: { reminderId, title, description, dateTime },
+    });
   });
 };
